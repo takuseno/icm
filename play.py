@@ -11,13 +11,13 @@ import tensorflow as tf
 
 from lightsaber.tensorflow.util import initialize
 from actions import get_action_space
-from network import make_network
+from network import make_network, make_icm
 from agent import Agent
 from worker import Worker
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--env', type=str, default='PongDeterministic-v4')
+    parser.add_argument('--env', type=str, default='ppaquette/SuperMarioBros-1-1-v0')
     parser.add_argument('--render', action='store_true')
     parser.add_argument('--load', type=str)
     args = parser.parse_args()
@@ -26,14 +26,16 @@ def main():
     sess.__enter__()
 
     model = make_network(
-        [[16, 8, 4, 0], [32, 4, 2, 0]])
+        [[32, 3, 2, 0], [32, 3, 2, 0], [32, 3, 2, 0], [32, 3, 2, 0]])
+    icm_model = make_icm(
+        [[32, 3, 2, 0], [32, 3, 2, 0], [32, 3, 2, 0], [32, 3, 2, 0]])
 
     env_name = args.env
-    actions = get_action_space(env_name)
+    actions = np.arange(14).tolist()
 
     global_step = tf.Variable(0, dtype=tf.int64, name='global_step')
 
-    worker = Worker('global', model,
+    worker = Worker('global', model, icm_model,
             global_step, env_name, render=args.render, training=False)
     global_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 'global')
 
